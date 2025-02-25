@@ -1,7 +1,5 @@
 import multer from 'multer';
 import sharp from 'sharp';
-import fs from 'fs';
-import path from 'path';
 
 // Set up storage for multer (storing temporarily in memory)
 const upload = multer({ storage: multer.memoryStorage() });
@@ -33,22 +31,21 @@ export default async function handler(req, res) {
       // Handle file upload
       await handleUpload(req, res);
 
-      // Create a directory for uploads if it doesn't exist
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      // Process and save images in different sizes
+      // Process images in different sizes in memory without saving to disk.
+      // For each size, we convert the processed image buffer to a base64 string
+      // which can be used as a data URL in the browser.
       const processedImages = await Promise.all(
         sizes.map(async (size) => {
-          const fileName = `image_${size.width}x${size.height}.jpg`;
-          const filePath = path.join(uploadDir, fileName);
-          await sharp(req.file.buffer)
-            .resize(size.width, size.height,{fit: 'fill'})
+          const buffer = await sharp(req.file.buffer)
+            .resize(size.width, size.height, { fit: 'fill' })
             .toFormat('jpeg')
-            .toFile(filePath);
-          return { size: `${size.width}x${size.height}`, path: `/uploads/${fileName}` };
+            .toBuffer();
+          
+          // Convert the buffer to a base64 string
+          const base64Image = buffer.toString('base64');
+          const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+          
+          return { size: `${size.width}x${size.height}`, dataUrl };
         })
       );
 
