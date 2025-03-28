@@ -14,6 +14,9 @@ export default function Home() {
       <Button onPress={() => router.push('/teleprompt')} className="w-48">
         Open Teleprompter
       </Button>
+      <Button onPress={() => router.push('/pdf_to_excel')} className="w-48">
+        PDF text extractor
+      </Button>
     </div>
   );
 }
